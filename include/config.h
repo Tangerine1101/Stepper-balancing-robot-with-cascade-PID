@@ -13,10 +13,10 @@ inline constexpr int serialSampleTime = 100/SAMPLE_TIME;
 inline constexpr float rad_to_step = MICRO_STEP*200/(2*pi);
 inline constexpr float step_to_rad = 1/rad_to_step;
 #define MAX_SPEED 5*rad_to_step // step/s
-#define MAX_ACCEL 2.0 // rad/s^2
+#define MAX_ACCEL 3.0 // rad/s^2
 inline constexpr float MAX_SPEED_RAD = MAX_SPEED*step_to_rad;
 inline constexpr float MAX_ACCEL_RAD = MAX_ACCEL*step_to_rad;
-#define MIN_SPEED 10//pps
+#define MIN_SPEED 16//pps
 // stm32f401CC Pins out list
 #define ONBOARD_LED PC13 //Onboard led
 #define BUTTON PA0 //Onboard button
@@ -30,15 +30,24 @@ inline constexpr float MAX_ACCEL_RAD = MAX_ACCEL*step_to_rad;
 #define M2 PA7
 inline bool dir[2] = {false, false};
 //PID control
-#define setpoint 0
-#define Kp 4.5
-#define Ki 0.1
-#define Kd 0.0005
+//Inner pid
+#define setpoint -0.005 // rad
+#define Kp_ang 3.65 //  4.25|3.5
+#define Ki_ang 3.0 //      |5.00
+#define Kd_ang 0.015 //      |0.01
+//Outer pid
+#define pos_setpoint 0
+#define Kp_pos 0.0
+#define Ki_pos 0.000
+#define Kd_pos 0.000
+
+
 #define offset 0.025 // rad/s
 //MPU6050 config
 #define SDA PB9 //White wire
 #define SCL PB8 //Purple wire
 #define MPU_INT PB4
+#define ANGULAR_CALIBRATE   0.0311
 //Communication config 
 #define Max_arguments   5
 #define NODE_SENDBYTE 0xAA

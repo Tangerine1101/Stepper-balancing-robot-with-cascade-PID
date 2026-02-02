@@ -87,7 +87,7 @@ void LQR::getStates(){
     _anglePitch = MPU_ALPHA * (_anglePitch + trustPrediction*(_gyrp_rad_s * dt)) + (1.0f - MPU_ALPHA) * _accelAngle;
     //float raw_accel = (_gyrp_rad_s - _lastGyroRate) / dt;
     _gyroRate = _gyrp_rad_s;
-    angular = -_anglePitch;
+    angular = _anglePitch + ANGULAR_CALIBRATE;
     gyroRate = _gyroRate;
 }
 

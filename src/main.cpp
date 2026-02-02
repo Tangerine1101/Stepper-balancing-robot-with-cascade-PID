@@ -9,6 +9,7 @@
 unsigned long preMicros = 0;
 uint32_t runTime = micros();
 float wheelPitch, wheelPitchRate;
+float angle_error;
 float last_voltage_output = 0;
 float controlVal =0;
 // define objects
@@ -27,6 +28,7 @@ void setMicroStep(unsigned int _microStep);
 void stepperExperiment();
 float pid_compute();
 void callbackPID();
+float cascade_compute();
 //ISR functions
 void mpuDataReady(){
   dataReady = true;
@@ -72,13 +74,12 @@ void loop() {
     dataReady = false;
     wheelPitch = step_to_rad*(stepper1.getPosition() + stepper2.getPosition())/2;
     wheelPitchRate = step_to_rad*(stepper1.getSpeed() + stepper2.getSpeed())/2;
-    //callback();
     callbackPID();
     //stepperExperiment();
     //fallExp();
     
     if (logTime++ >= serialSampleTime){
-    float txData[Max_arguments] = {lqr.angular, lqr.gyroRate, wheelPitch, wheelPitchRate, lqr.getRawAngle()};  
+    float txData[Max_arguments] = {lqr.angular, lqr.gyroRate, wheelPitch, wheelPitchRate, controlVal};  
     tx.sendBinary(txData);
     digitalWrite(ONBOARD_LED, !digitalRead(ONBOARD_LED));
     //logTime = 0;
@@ -86,30 +87,11 @@ void loop() {
     IWatchdog.reload();
   }
 }
-void callback() {
-  lqr.getStates();
-  float u = lqr.compute();
-  u = u/M_wheel;
-  // Tích phân Euler: v_new = v_old + a * T_sample
-  // SAMPLE_TIME được define trong config.h (ms)
-  controlVal += u * (SAMPLE_TIME / 1000.0f);
 
-  // Chuyển sang steps/s
-  float speedStep = controlVal * rad_to_step;
-
-  // Nạp vận tốc vào bộ điều khiển
-  stepper1.setSpeed(speedStep);
-  stepper2.setSpeed(speedStep);
-
-  if (abs(lqr.angular) > 0.7) { // ~40 độ
-        stepper1.setSpeed(0);
-        stepper2.setSpeed(0);
-  }
-}
 //define functions
 void callbackPID() {
   lqr.getStates();
-  controlVal = -pid_compute();
+  controlVal = pid_compute();
 
   float speedStep = controlVal * rad_to_step;
 
@@ -201,22 +183,16 @@ void setMicroStep(unsigned int _microStep){
 float pid_compute(){
   float angular = lqr.angular;
   float gyroRate = lqr.gyroRate;
-  static float LPF = 0;
-  static float alpha = 1.0; // trust 90% on new value
   static float integral = 0;
-  static float derivative = 0;
   static float prevError = 0;
   const float dt = SAMPLE_TIME/1000.0;
 
   float error = setpoint - angular;
-  float output = Kp * error + Ki * integral + Kd * derivative;
+  float output = Kp_ang * error + Ki_ang * integral + Kd_ang * gyroRate;
   integral += error *dt;
-  integral = constrain(integral, -MAX_SPEED_RAD, MAX_SPEED_RAD);
-  derivative = gyroRate; //physically gyro rate is derivative of angular
+  integral = constrain(integral, -1, 1);
   prevError = error;
-  output = output*alpha + (1-alpha)*LPF;
-  LPF = output;
-  if(abs(output) <= offset) return 0;
+
   output = constrain(output, -MAX_SPEED_RAD, MAX_SPEED_RAD);
   return output;
 }

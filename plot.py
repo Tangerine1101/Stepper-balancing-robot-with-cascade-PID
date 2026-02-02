@@ -15,15 +15,15 @@ PORT = '/dev/ttyACM0'       # Thay bằng 'COMx' nếu dùng Windows
 BAUD_RATE = 115200
 
 # 2. Cấu hình hiển thị dữ liệu
-MAX_POINTS = 400            # Số lượng điểm dữ liệu hiển thị trên màn hình (Độ rộng cửa sổ thời gian)
+MAX_POINTS = 5000            # Số lượng điểm dữ liệu hiển thị trên màn hình (Độ rộng cửa sổ thời gian)
 PLOT_INTERVAL = 50          # Tốc độ làm mới đồ thị (ms)
 
 # 3. Cấu hình giới hạn trục Y (Y-Axis Limits)
 # Để None nếu muốn tự động co giãn (Auto-scale)
 # Để [min, max] nếu muốn cố định giá trị
-Auto_y = 0
+Auto_y = 1
 # Đồ thị 1: Body State (Góc thân & Vận tốc góc)
-Y_LIM_PLOT_1 = [-1.0, 1.0]  # Ví dụ: [-1 rad, 1 rad]
+Y_LIM_PLOT_1 = [-0.5, 0.5]  # Ví dụ: [-1 rad, 1 rad]
 # Y_LIM_PLOT_1 = None       # Dùng dòng này nếu muốn Auto-scale
 
 # Đồ thị 2: Wheel State (Góc bánh & Vận tốc bánh)
@@ -148,8 +148,8 @@ def update_plot(frame):
 
     # --- VẼ ĐỒ THỊ 3: Giá trị thử nghiệm ---
     ax3.cla()
-    ax3.plot(t, d_float5, label='Float[5]', color='red', linewidth=1.5)
-    ax3.set_ylabel('Value') # Không có đơn vị cụ thể
+    ax3.plot(t, d_float5, label='control value', color='red', linewidth=1.5)
+    ax3.set_ylabel('rad/s') # Không có đơn vị cụ thể
     ax3.set_xlabel('Time (s)')
     ax3.legend(loc='upper left', fontsize='small')
     ax3.grid(True, linestyle=':', alpha=0.6)

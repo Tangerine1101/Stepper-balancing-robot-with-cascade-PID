@@ -1,6 +1,12 @@
+.gitignore
 .pio
 .vscode
 .doc
 .lib
 .removed
 .test
+doc/
+lib/
+removed/
+test/
+archive/
