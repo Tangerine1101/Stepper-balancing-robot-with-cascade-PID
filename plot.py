@@ -6,9 +6,6 @@ import collections
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-# ==========================================
-#               CẤU HÌNH (SETTINGS)
-# ==========================================
 
 # 1. Cấu hình kết nối
 PORT = '/dev/ttyACM0'       # Thay bằng 'COMx' nếu dùng Windows
@@ -23,19 +20,13 @@ PLOT_INTERVAL = 50          # Tốc độ làm mới đồ thị (ms)
 # Để [min, max] nếu muốn cố định giá trị
 Auto_y = 1
 # Đồ thị 1: Body State (Góc thân & Vận tốc góc)
-Y_LIM_PLOT_1 = [-0.5, 0.5]  # Ví dụ: [-1 rad, 1 rad]
-# Y_LIM_PLOT_1 = None       # Dùng dòng này nếu muốn Auto-scale
+Y_LIM_PLOT_1 = [-0.5, 0.5]  
 
-# Đồ thị 2: Wheel State (Góc bánh & Vận tốc bánh)
+# Đồ thị 2: Wheel State (Góc bánh xe & Vận tốc góc bánh xe)
 Y_LIM_PLOT_2 = None         # Auto-scale cho bánh xe
 
 # Đồ thị 3: Float[5] (Giá trị thử nghiệm)
-Y_LIM_PLOT_3 = [-5.0, 5.0]    # Ví dụ cố định cho điện áp hoặc PWM
-# Y_LIM_PLOT_3 = None
-
-# ==========================================
-#           KHÔNG SỬA CODE DƯỚI ĐÂY
-# ==========================================
+Y_LIM_PLOT_3 = [-5.0, 5.0]   
 
 # Cấu trúc gói tin: Start(1B) + 5 float(20B) + Checksum(1B) = 22 Bytes
 STRUCT_FORMAT = '<B5fB'  

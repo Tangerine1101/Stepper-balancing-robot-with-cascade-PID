@@ -16,15 +16,15 @@ private:
     uint16_t dirBitMask;
     
     volatile long currentPos = 0;
-    volatile float currentSpeed = 0.0f; // steps/s (Vận tốc thực tế hiện tại)
-    volatile float targetSpeed = 0.0f;  // steps/s (Vận tốc mong muốn)
+    volatile float currentSpeed = 0.0f; // steps/s (Current actual velocity)
+    volatile float targetSpeed = 0.0f;  // steps/s (Target velocity)
     volatile bool isRunning = false;
     
-    // Cấu hình giới hạn từ config.h
-    const float min_speed = MIN_SPEED;      // steps/s (Tốc độ tối thiểu để tránh chia cho 0)
-    const float max_speed_limit = MAX_SPEED; // steps/s (Giới hạn tốc độ tối đa của hệ thống)
-    // Gia tốc tối đa cho phép khi thay đổi vận tốc (để tránh trượt bước)
-    const float max_accel = MAX_ACCEL * rad_to_step; // Chuyển từ rad/s^2 sang steps/s^2
+    // Limit configuration from config.h
+    const float min_speed = MIN_SPEED;      // steps/s (Minimum speed to avoid division by zero)
+    const float max_speed_limit = MAX_SPEED; // steps/s (Maximum speed limit of the system)
+    // Maximum allowed acceleration when changing speed (to prevent step skipping)
+    const float max_accel = MAX_ACCEL * rad_to_step; // Convert from rad/s^2 to steps/s^2
     
     bool reverseDir = 0;
 
@@ -59,16 +59,16 @@ public:
         timer->attachInterrupt(callback);
     }
 
-    // --- Hàm chính: Đặt vận tốc mục tiêu ---
+    // --- Main function: Set target velocity ---
     // speed: steps/s
     void setSpeed(float speed) {
-        // Giới hạn vận tốc đầu vào theo cấu hình cứng
+        // Limit input speed according to hard configuration
         if (speed > max_speed_limit) speed = max_speed_limit;
         if (speed < -max_speed_limit) speed = -max_speed_limit;
         
         targetSpeed = speed;
 
-        // Nếu động cơ đang dừng mà có lệnh chạy, khởi động lại timer
+        // If motor is stopped and there's a run command, restart timer
         if (!isRunning && abs(targetSpeed) > min_speed) {
             currentSpeed = (targetSpeed > 0) ? min_speed : -min_speed;
             isRunning = true;
@@ -81,76 +81,76 @@ public:
         return currentPos;
     }
     
-    // Trả về vận tốc thực tế (đang ramp) chứ không phải target
+    // Returns actual velocity (currently ramping) not target
     float getSpeed() {
         return currentSpeed;
     }
 
-    // --- Hàm xử lý ngắt (Logic chuyển đổi v -> f_step) ---
+    // --- Interrupt handler function (Logic conversion v -> f_step) ---
     void handleInterrupt() {
         if (!isRunning) return;
 
-        // 1. Tạo xung
+        // 1. Generate pulse
         stepPort->ODR ^= stepBitMask;
 
-        // Logic tính toán khi hoàn thành 1 bước (Cạnh lên)
+        // Calculation logic when completing 1 step (rising edge)
         if ((stepPort->ODR & stepBitMask) != 0) {
-            // Cập nhật vị trí
+            // Update position
             if (currentSpeed > 0) currentPos++;
             else currentPos--;
 
-            // --- QUAN TRỌNG: Thuật toán Ramp (Tạo profile chuyển động) ---
-            // Tính dt: thời gian thực hiện bước vừa rồi
+            // --- IMPORTANT: Ramp algorithm (Create motion profile) ---
+            // Calculate dt: time taken for the last step
             float dt = 1.0f / abs(currentSpeed); 
             
-            // Tính độ thay đổi vận tốc tối đa cho phép trong khoảng thời gian dt
+            // Calculate maximum allowed velocity change within dt time interval
             // v_next = v_current + a * dt
             float speed_change = max_accel * dt;
 
-            // Điều chỉnh currentSpeed tiến về targetSpeed
+            // Adjust currentSpeed towards targetSpeed
             float error = targetSpeed - currentSpeed;
 
             if (abs(error) <= speed_change) {
-                // Nếu sai lệch nhỏ hơn khả năng tăng tốc, gán bằng luôn
+                // If error is smaller than acceleration capability, assign directly
                 currentSpeed = targetSpeed;
             } else {
-                // Nếu sai lệch lớn, tăng/giảm theo gia tốc giới hạn
+                // If error is large, increase/decrease by limited acceleration
                 if (error > 0) currentSpeed += speed_change;
                 else currentSpeed -= speed_change;
             }
 
-            // --- Xử lý vùng chết (Deadzone) và Đảo chiều ---
+            // --- Handle deadzone and direction reversal ---
             if (abs(currentSpeed) < min_speed) {
-                // Nếu target về 0, dừng động cơ
+                // If target is 0, stop motor
                 if (abs(targetSpeed) < min_speed) {
                     currentSpeed = 0;
                     isRunning = false;
                 } else {
-                    // Nếu đang đảo chiều (ví dụ từ -100 lên +100), giữ min_speed để đi qua điểm 0
+                    // If reversing direction (e.g., from -100 to +100), keep min_speed to pass through zero
                     currentSpeed = (targetSpeed > 0) ? min_speed : -min_speed;
                 }
             }
 
-            // Cập nhật hướng quay (Dir pin)
-            // Lưu ý: Logic đảo chiều mềm (Soft directional change) đã được xử lý bằng dấu của currentSpeed
+            // Update rotation direction (Dir pin)
+            // Note: Soft directional change logic already handled by currentSpeed sign
             bool logicLevel = (currentSpeed > 0) ? HIGH : LOW;
             if (reverseDir) logicLevel = !logicLevel;
             if (logicLevel) dirPort->BSRR = dirBitMask;
             else dirPort->BSRR = (uint32_t)dirBitMask << 16;
         }
 
-        // 2. Cài đặt thời gian cho xung tiếp theo (Frequency modulation)
-        // Delay = 1/2 chu kỳ (vì toggle 2 lần = 1 bước)
+        // 2. Set time for next pulse (Frequency modulation)
+        // Delay = 1/2 cycle (because 2 toggles = 1 step)
         // Delay (us) = 1.000.000 / (2 * |speed|)
         uint32_t nextDelay;
         
         if (abs(currentSpeed) < 1.0f) {
-             nextDelay = 50000; // Giới hạn delay tối đa nếu tốc độ gần 0
+             nextDelay = 50000; // Maximum delay limit when speed is near 0
         } else {
              nextDelay = 500000 / abs(currentSpeed);
         }
 
-        // Kẹp giới hạn delay để timer không bị lỗi
+        // Clamp delay limit to prevent timer errors
         if (nextDelay > 50000) nextDelay = 50000; 
         if (nextDelay < 10) nextDelay = 10;       
 

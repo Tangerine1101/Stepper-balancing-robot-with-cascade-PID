@@ -7,7 +7,7 @@
 struct __attribute__((packed)) serialPackage
 {
     uint8_t startByte; //0xAA for TX, 0xFE for RX
-    float data[Max_arguments]; //{lqr.angular, lqr.gyroRate, wheelPitch, wheelPitchRate, controlVoltage}
+    float data[Max_arguments]; //{Sensor.angular, Sensor.gyroRate, wheelPitch, wheelPitchRate, controlVoltage}
     uint8_t checkSum; //XOR checksum
 
     serialPackage(){

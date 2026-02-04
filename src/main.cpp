@@ -16,7 +16,7 @@ float controlVal =0;
 serialCommunication tx(0xAA);
 ControlSpeed stepper1(TIM2, PUL1, DIR1);
 ControlSpeed stepper2(TIM3, PUL2, DIR2);
-LQR lqr(K, &wheelPitch, &wheelPitchRate);
+Sensors Sensor (K, &wheelPitch, &wheelPitchRate);
 
 // declare functions 
 bool ifspin();
@@ -56,7 +56,7 @@ void setup() {
   stepper1.setReverseDir(true);
   //initialize objects
   usbPort.begin(SERIAL_BAUD);
-  lqr.intiI2C();
+  Sensor.intiI2C();
 
   //initialize operating 
   while (digitalRead(BUTTON) && !usbPort) delay(10);    
@@ -79,7 +79,7 @@ void loop() {
     //fallExp();
     
     if (logTime++ >= serialSampleTime){
-    float txData[Max_arguments] = {lqr.angular, lqr.gyroRate, wheelPitch, wheelPitchRate, controlVal};  
+    float txData[Max_arguments] = {Sensor.angular, Sensor.gyroRate, wheelPitch, wheelPitchRate, controlVal};  
     tx.sendBinary(txData);
     digitalWrite(ONBOARD_LED, !digitalRead(ONBOARD_LED));
     //logTime = 0;
@@ -90,7 +90,7 @@ void loop() {
 
 //define functions
 void callbackPID() {
-  lqr.getStates();
+  Sensor.getStates();
   controlVal = pid_compute();
 
   float speedStep = controlVal * rad_to_step;
@@ -99,7 +99,7 @@ void callbackPID() {
   stepper1.setSpeed(speedStep);
   stepper2.setSpeed(speedStep);
 
-  if (abs(lqr.angular) > 0.7) { // ~40 độ
+  if (abs(Sensor.angular) > 0.7) { // ~40 độ
         stepper1.setSpeed(0);
         stepper2.setSpeed(0);
   }
@@ -148,10 +148,10 @@ void scanI2C(){
 void fallExp(){
   static int logTime = 0;
   static bool fallFlag = false;
-  lqr.getStates();
+  Sensor.getStates();
 
-  if (abs(lqr.angular) <= 0.02) runTime = micros();
-  else if(abs(lqr.angular) >= 0.1 && !fallFlag){
+  if (abs(Sensor.angular) <= 0.02) runTime = micros();
+  else if(abs(Sensor.angular) >= 0.1 && !fallFlag){
     fallFlag = true;
     usbPort.print("fall: ");
     usbPort.println((micros()- runTime)/1000.0);
@@ -159,7 +159,7 @@ void fallExp(){
   }
 
   if (logTime >= serialSampleTime) {
-    float txData[Max_arguments] = {lqr.angular, lqr.gyroRate, wheelPitch, wheelPitchRate, micros() - runTime};
+    float txData[Max_arguments] = {Sensor.angular, Sensor.gyroRate, wheelPitch, wheelPitchRate, micros() - runTime};
     tx.sendText(txData);
     logTime = 0;
   }
@@ -167,7 +167,7 @@ void fallExp(){
   IWatchdog.reload();
 }
 void stepperExperiment(){
-  lqr.getStates();
+  Sensor.getStates();
   controlVal = 40; //rad/s^2
   float accelStep = controlVal * rad_to_step;
 }
@@ -181,8 +181,8 @@ void setMicroStep(unsigned int _microStep){
 }
 
 float pid_compute(){
-  float angular = lqr.angular;
-  float gyroRate = lqr.gyroRate;
+  float angular = Sensor.angular;
+  float gyroRate = Sensor.gyroRate;
   static float integral = 0;
   static float prevError = 0;
   const float dt = SAMPLE_TIME/1000.0;

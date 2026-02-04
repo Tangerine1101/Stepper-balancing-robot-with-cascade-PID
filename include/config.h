@@ -2,7 +2,7 @@
 #define CONFIG_H
 #include <Arduino.h>
 // Misc config
-#define usbPort Serial
+#define usbPort SerialUSB
 #define SERIAL_BAUD 115200
 #define SAMPLE_TIME 5 //ms
 inline constexpr int serialSampleTime = 100/SAMPLE_TIME;
@@ -33,16 +33,9 @@ inline bool dir[2] = {false, false};
 //Inner pid
 #define setpoint -0.005 // rad
 #define Kp_ang 3.65 //  4.25|3.5
-#define Ki_ang 3.0 //      |5.00
-#define Kd_ang 0.015 //      |0.01
-//Outer pid
-#define pos_setpoint 0
-#define Kp_pos 0.0
-#define Ki_pos 0.000
-#define Kd_pos 0.000
+#define Ki_ang 3.0  //      |5.00
+#define Kd_ang 0.015//      |0.01
 
-
-#define offset 0.025 // rad/s
 //MPU6050 config
 #define SDA PB9 //White wire
 #define SCL PB8 //Purple wire
@@ -63,18 +56,10 @@ inline constexpr float i2cPERIOD = 1/i2cFREQ * 1000000;
 #define INPUTS 1 //voltage
 #define OUTPUTS 4 //[body angular, body angular velocity, wheel angular, wheel angular velocity]
 inline volatile bool dataReady = false;
-//LQR
-#define Q 0.01
-inline constexpr float K[4] = {-32.278*Q, -4.098*Q, -0.49*Q, -1.86*Q};
-#define M_wheel 0.206
+//Sensors
+inline constexpr float K[4] = {0, 0 ,0 , 0};
 //Control
 #define trustPrediction 0.00f
 #define MPU_ALPHA 0.95f
-#define PREDICTION_HORIZON 0.0f
-#define MOTOR_LAG 0.005f
-#define Q_angle 0.005f // Nhiễu quá trình (tin vào mô hình)
-#define Q_gyro 0.003f  // Nhiễu quá trình (tin vào gyro)
-#define R_angle 0.03f  // Nhiễu đo lường (tin vào accel)
 //Function
-
 #endif
