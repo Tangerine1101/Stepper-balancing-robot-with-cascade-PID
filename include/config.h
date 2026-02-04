@@ -13,7 +13,7 @@ inline constexpr int serialSampleTime = 100/SAMPLE_TIME;
 inline constexpr float rad_to_step = MICRO_STEP*200/(2*pi);
 inline constexpr float step_to_rad = 1/rad_to_step;
 #define MAX_SPEED 5*rad_to_step // step/s
-#define MAX_ACCEL 3.0 // rad/s^2
+#define MAX_ACCEL 1.5 // rad/s^2
 inline constexpr float MAX_SPEED_RAD = MAX_SPEED*step_to_rad;
 inline constexpr float MAX_ACCEL_RAD = MAX_ACCEL*step_to_rad;
 #define MIN_SPEED 16//pps
@@ -28,13 +28,12 @@ inline constexpr float MAX_ACCEL_RAD = MAX_ACCEL*step_to_rad;
 #define PUL1 PA5 //T2C1
 #define PUL2 PA6 //T3C1
 #define M2 PA7
-inline bool dir[2] = {false, false};
 //PID control
 //Inner pid
 #define setpoint -0.005 // rad
 #define Kp_ang 3.65 //  4.25|3.5
-#define Ki_ang 3.0  //      |5.00
-#define Kd_ang 0.015//      |0.01
+#define Ki_ang 5.0  //      |5.00
+#define Kd_ang 0.2//      |0.01
 
 //MPU6050 config
 #define SDA PB9 //White wire
